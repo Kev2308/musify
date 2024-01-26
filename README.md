@@ -4,4 +4,4 @@ open terminal from midi folder type
 also install this from musify folder in terminal
 "pip install -r requirements.txt"
 
-there maybe more dependencies 
+rename models\baseline.pthx to models\baseline.pth
