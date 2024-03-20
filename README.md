@@ -5,3 +5,5 @@ also install this from musify folder in terminal
 "pip install -r requirements.txt"
 
 rename models\baseline.pthx to models\baseline.pth
+
+run using streamlit run index.py
