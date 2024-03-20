@@ -4,6 +4,9 @@ from pathlib import Path
 import os
 import io
 import whisper
+from PIL import Image
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 
 def delete_files_in_folder(folder_path):
     if not os.path.exists(folder_path):
@@ -23,8 +26,32 @@ def cleartmp():
     delete_files_in_folder("tmp\midi")
     delete_files_in_folder("tmp\seperated")
     delete_files_in_folder("tmp\music")
+    delete_files_in_folder("tmp\sheet")
+    
 
 
+def topdf(input_folder, output_pdf):
+   
+    with open("tmp\sheet\sheet.pdf", "w") as file:
+        print("file created")
+
+    png_files = [f for f in os.listdir(input_folder) if f.endswith('.png')]
+    
+    # Sort the PNG files by name
+    png_files.sort()
+    
+    # Create a new PDF
+    c = canvas.Canvas(output_pdf, pagesize=letter)
+    
+    # Convert each PNG to PDF page and add to the PDF
+    for png_file in png_files:
+        png_path = os.path.join(input_folder, png_file)
+        img = Image.open(png_path)
+        c.setPageSize((img.width, img.height))
+        c.drawInlineImage(png_path, 0, 0)
+        c.showPage()
+    
+    c.save()
 
 
 def separator(input_arg):
@@ -33,6 +60,8 @@ def midi():
     subprocess.run(["basic-pitch", "tmp\midi", "tmp\seperated\Instruments.wav"])
 def midi_ns():
     subprocess.run(["basic-pitch", "tmp\midi", f"tmp\music\{uploaded_file.name}"])
+def sheetpng():
+    subprocess.run(["models\sheet.exe", "tmp\midi\Generated_midi.mid", "tmp\sheet\sheet.pdf"])
 def save_uploadedfile(uploadedfile):
      with open(os.path.join("tmp\music",uploadedfile.name),"wb") as f:
          f.write(uploadedfile.getbuffer())
@@ -62,7 +91,7 @@ if uploaded_file is not None:
                 st.text("warning vocals havent been seperated")
             midi_file_path = "tmp\midi\Generated_midi.mid"
             with open(midi_file_path, "rb") as file:
-                midi_content = file.read()
+               midi_content = file.read()
             
             if st.download_button(
             label="Download MIDI File",
@@ -90,11 +119,6 @@ if uploaded_file is not None:
     ):
             st.write('Downloaded the midi file')
             
-
-    # Read MIDI file content
-            with open(midi_file_path, "rb") as file:
-                midi_content = file.read()
-
     # Create a download button for the MIDI file
     
     if st.button("generate lyrics file"):
@@ -105,4 +129,24 @@ if uploaded_file is not None:
             st.write("seperated file not available using original file")
             result = model.transcribe(f"tmp\music\{uploaded_file.name}")
         st.text_area("Lyrics",result["text"])
+    
+    #Create sheet music using midi
+
+    if st.button("generate SheetMusic"):
+        if os.path.exists("tmp\midi\Generated_midi.mid"):
+            sheetpng()
+            topdf("tmp\sheet","tmp\sheet\sheet.pdf")
+            with open("tmp\sheet\sheet.pdf", "rb") as pdf_file:
+                PDFbyte = pdf_file.read()
+
+            if st.download_button(label="download sheet",
+                    data=PDFbyte,
+                    file_name="sheet.pdf",
+                    mime='application/octet-stream'):
+                st.write("pdf downloaded successfully")
+        else:
+            st.write("generate midi file first")
+
+    
+            
     
